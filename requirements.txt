@@ -1,0 +1,20 @@
+# Core LLM & RAG
+anthropic>=0.25.0
+chromadb>=0.4.22
+sentence-transformers>=2.7.0
+PyPDF2>=3.0.1
+
+# Report generation
+python-docx>=1.1.0
+
+# Data / config
+pydantic>=2.5.0
+pyyaml>=6.0.1
+python-dotenv>=1.0.0
+numpy>=1.26.0
+pandas>=2.2.0
+
+# Dev
+pytest>=8.0.0
+pytest-cov>=4.1.0
+ruff>=0.3.0

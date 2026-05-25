@@ -1,0 +1,52 @@
+categories:
+  Lab_Error_Analyst:
+    label: "Laboratory Error - Analyst / Procedure"
+    description: >
+      Single-batch deviation isolated to one analyst session.
+      Typical causes: sample mix-up, incorrect dilution, pipetting error.
+    checklist:
+      - Review analyst training records
+      - Check sample prep log and weighing records
+      - Verify calculation worksheets
+      - Interview analyst
+      - Request retest by second analyst
+    phase: "Phase I"
+
+  Lab_Error_Instrument:
+    label: "Laboratory Error - Instrument / Equipment"
+    description: >
+      Correlated deviation across multiple parameters on same instrument.
+      Typical causes: calibration failure, system suitability failure.
+    checklist:
+      - Pull instrument logbook
+      - Review last calibration certificate
+      - Check system suitability data
+    phase: "Phase I"
+
+  Raw_Material:
+    label: "Raw Material / Starting Material Deviation"
+    description: >
+      Step-shift correlating with new material lot receipt.
+    checklist:
+      - Cross-reference batch with raw material lot receipt date
+      - Pull CoA from supplier for affected lot
+      - Request retained sample testing
+    phase: "Phase II"
+
+  Process_Deviation:
+    label: "Manufacturing Process Deviation"
+    description: >
+      Gradual drift in dissolution or compression parameters.
+    checklist:
+      - Review batch records for process parameters
+      - Check equipment maintenance logs
+    phase: "Phase II"
+
+  Environmental_Equipment:
+    label: "Environmental / Equipment Variability"
+    description: >
+      Variance inflation without mean shift in physical parameters.
+    checklist:
+      - Review environmental monitoring logs
+      - Inspect tooling for wear
+    phase: "Phase II"

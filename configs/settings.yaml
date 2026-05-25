@@ -1,0 +1,23 @@
+llm:
+  model: "claude-sonnet-4-20250514"
+  max_tokens: 4096
+  temperature: 0.2
+
+retrieval:
+  embedding_model: "all-MiniLM-L6-v2"
+  top_k: 6
+  chunk_size: 512
+  chunk_overlap: 64
+  collection_name: "pharma_kb"
+
+report:
+  page_size: "A4"
+  font: "Arial"
+  include_watermark: true
+  watermark_text: "AI-ASSISTED DRAFT — REQUIRES QC/QA REVIEW"
+  output_dir: "./reports"
+
+audit:
+  export_json: true
+  include_retrieved_chunks: true
+  include_prompt_versions: true
