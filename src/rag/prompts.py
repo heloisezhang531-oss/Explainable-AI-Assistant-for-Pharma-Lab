@@ -1,119 +1,130 @@
 """
-Prompt templates for each report section.
-All prompts include a regulatory context block and explicit GxP tone instructions.
+LLM prompt templates — Phase I investigation only.
+
+Scope:
+  - Phase I laboratory investigation narrative
+  - Multi-cause RCA reasoning from SHAP evidence
+  - Escalation recommendation (Phase II required: yes/no + rationale)
+
+Out of scope (by design):
+  - Phase II manufacturing investigation
+  - CAPA generation
+  - Batch disposition decision
 """
 
-SYSTEM_PROMPT = """You are an expert pharmaceutical quality assurance scientist
-specializing in GxP-compliant OOS/OOT/Deviation investigation reports.
+SYSTEM_PROMPT = """You are an expert pharmaceutical quality assurance scientist.
+You write Phase I (laboratory) OOS/OOT investigation reports for a research project.
 
-Your writing must:
-- Use formal regulatory language consistent with FDA 21 CFR 211.192 and ICH Q10
-- Be factual, evidence-based, and never speculative without qualification
-- Acknowledge uncertainty explicitly (e.g., "pending further investigation")
-- Avoid conclusions not supported by the provided event data
-- Structure content for direct use in a regulated document
+Regulatory context: 21 CFR 211.192, FDA OOS Guidance (2006), ICH Q10.
 
-You will be given retrieved passages from FDA/ICH guidance as context.
-Cite them implicitly in your narrative (do not use footnote numbers).
+Your output must:
+- Be factual and evidence-based; cite only the SHAP evidence and event data provided
+- Use formal GxP regulatory language
+- Never fabricate data or invent analytical results
+- Mark unknown items explicitly as "pending investigation" or "not available"
+- Remain strictly within Phase I scope (laboratory investigation only)
+- NOT include CAPA, batch release decisions, or Phase II manufacturing details
 """
 
 
-def build_phase1_prompt(event: dict, context: str) -> str:
+def build_phase1_prompt(event: dict, shap_summary: str, rag_context: str) -> str:
+    """
+    Phase I investigation narrative prompt.
+    Combines structured event data + SHAP anomaly evidence + retrieved regulatory passages.
+    """
     return f"""
-=== REGULATORY CONTEXT ===
-{context}
+=== RETRIEVED REGULATORY CONTEXT ===
+{rag_context}
 
-=== EVENT DATA ===
-Event ID: {event.get("event_id")}
-Event Type: {event.get("event_type")}
-Parameter: {event.get("parameter")}
-Test Method: {event.get("test_method")}
-Result: {event.get("result")} {event.get("unit", "")}
-Specification: {event.get("spec_limit")}
-Analyst ID: {event.get("analyst_id")}
-Instrument ID: {event.get("instrument_id")}
-Instrument Last Calibration: {event.get("last_calibration")}
+=== QUALITY EVENT DATA ===
+Event ID:           {event.get("event_id")}
+Event Type:         {event.get("event_type")}          (OOS / OOT / OOE)
+Batch Number:       {event.get("batch_number")}
+Product Code:       {event.get("product_code")}
+Parameter:          {event.get("parameter")}
+Test Method:        {event.get("test_method")}
+Result:             {event.get("result")} {event.get("unit", "")}
+Specification:      {event.get("spec_limit")}
+Deviation:          {event.get("deviation_pct", "N/A")}% {event.get("deviation_direction", "")}
+Analyst ID:         {event.get("analyst_id")}
+Instrument ID:      {event.get("instrument_id")}
+Last Calibration:   {event.get("last_calibration", "Not recorded")}
 System Suitability: {event.get("system_suitability_result", "Not recorded")}
-Batch Number: {event.get("batch_number")}
-Sample Storage Conditions: {event.get("sample_storage", "Not specified")}
+Sample Storage:     {event.get("sample_storage", "Not specified")}
+API Lot:            {event.get("api_lot_number", "Not specified")}
+Analyst Notes:      {event.get("analyst_notes", "None")}
+
+=== SHAP ANOMALY EVIDENCE ===
+{shap_summary}
 
 === TASK ===
-Write the Phase I (Laboratory Investigation) section of a pharmaceutical
-OOS investigation report. Cover:
+Write the Phase I Laboratory Investigation section of a GxP OOS investigation report.
 
-1. Initial notification and timeline
-2. Review of analyst's technique and documentation
-3. Instrument and equipment assessment (calibration, system suitability)
-4. Sample integrity review (storage, handling, preparation)
-5. Calculation verification
-6. Phase I conclusion: confirmed lab error, invalidated, or proceed to Phase II
+Structure your response with these sub-sections:
 
-Write 3-5 formal paragraphs. Use past tense. Do not fabricate data.
+**1. Initial Notification**
+State when and how the event was triggered, who was notified.
+
+**2. Analytical Method and Instrument Review**
+Assess instrument calibration status, system suitability, column condition.
+Reference the SHAP evidence for instrument-related features if relevant.
+
+**3. Sample and Analyst Review**
+Review sample preparation, storage, handling. Assess analyst compliance with SOP.
+Reference SHAP spike evidence if an analyst error pattern is present.
+
+**4. Possible Root Causes (Multi-Cause Assessment)**
+Based on the SHAP evidence, list ALL plausible causes in descending likelihood.
+For each cause state: (a) supporting SHAP features, (b) evidence for, (c) evidence against.
+Do not limit to a single cause — real events may have concurrent contributors.
+
+**5. Phase I Conclusion**
+State clearly:
+- Whether a laboratory assignable cause was identified
+- Confidence level (High / Medium / Low) with rationale
+
+Write 4–6 paragraphs total. Use past tense. Do not reproduce raw numbers not in the event data above.
 """
 
 
-def build_phase2_prompt(event: dict, context: str, phase1_conclusion: str) -> str:
+def build_escalation_prompt(event: dict, phase1_conclusion: str, rag_context: str) -> str:
+    """
+    Escalation recommendation prompt.
+    LLM decides whether Phase II is warranted, with explicit rationale.
+    Does NOT generate Phase II content.
+    """
     return f"""
-=== REGULATORY CONTEXT ===
-{context}
-
-=== EVENT DATA ===
-{event}
+=== RETRIEVED REGULATORY CONTEXT ===
+{rag_context}
 
 === PHASE I CONCLUSION ===
 {phase1_conclusion}
 
-=== TASK ===
-Write the Phase II (Manufacturing/Extended Investigation) section.
-Assuming no assignable lab error was found in Phase I, expand the investigation to:
-
-1. Manufacturing batch record review
-2. Raw material assessment (lot number, CoA, supplier)
-3. Process parameter review (compression, coating, environmental)
-4. Historical trend analysis for this product/parameter
-5. Similar product/batch assessment
-6. Root cause determination with confidence level
-7. Impact assessment on released batches
-
-Write 4-6 formal paragraphs. Be explicit about what was ruled out and why.
-"""
-
-
-def build_capa_prompt(event: dict, root_cause: str, context: str) -> str:
-    return f"""
-=== REGULATORY CONTEXT ===
-{context}
-
-=== ROOT CAUSE ===
-{root_cause}
-
-=== EVENT ===
-Parameter: {event.get("parameter")}
-Product: {event.get("product_code", "N/A")}
+=== EVENT SUMMARY ===
+Event Type: {event.get("event_type")}
+Parameter:  {event.get("parameter")}
+Result:     {event.get("result")} {event.get("unit","")} (spec: {event.get("spec_limit")})
 
 === TASK ===
-Write the CAPA (Corrective and Preventive Action) section.
-Include:
-1. Immediate corrective actions taken
-2. Root cause-specific preventive actions
-3. Effectiveness check criteria and timeline
-4. Responsible owner (use generic titles: QC Manager, QA Director)
+Based on the Phase I conclusion above and applicable FDA guidance, provide an
+Escalation Recommendation section with the following structure:
 
-Be specific and measurable. Avoid vague actions like "retrain staff".
-"""
+**Escalation Decision: [PHASE II REQUIRED / NOT REQUIRED]**
 
+**Regulatory Basis**
+Cite the specific FDA OOS Guidance section or 21 CFR provision that supports
+the decision to escalate or close at Phase I.
 
-def build_conclusion_prompt(event: dict, root_cause: str, impact: str) -> str:
-    return f"""
-Write a formal investigation conclusion paragraph for a pharmaceutical
-OOS/OOT report. Include:
-- Summary of root cause: {root_cause}
-- Batch disposition recommendation
-- Impact assessment summary: {impact}
-- Statement on data integrity (ALCOA+ compliance)
-- Signature block placeholder note
+**Rationale**
+2–3 sentences explaining why Phase II is or is not warranted based on
+the Phase I findings. Reference specific ruled-out or unresolved hypotheses.
 
-Keep to 1-2 paragraphs. Formal regulatory tone.
-Event type: {event.get("event_type")}
-Parameter: {event.get("parameter")}
+**If Phase II Required — Scope Recommendation**
+(Include only if escalating) List the specific manufacturing records,
+raw material lots, or additional tests that Phase II should address.
+State clearly: "Phase II investigation and CAPA generation are outside
+the scope of this system and must be conducted by the responsible
+manufacturing site quality team."
+
+Keep this section to 1–2 paragraphs maximum.
 """

@@ -1,52 +1,88 @@
+# Root cause taxonomy for Phase I (laboratory investigation only)
+# Each category: triggering features, investigation checklist, escalation signal
+
 categories:
+
   Lab_Error_Analyst:
-    label: "Laboratory Error - Analyst / Procedure"
-    description: >
-      Single-batch deviation isolated to one analyst session.
-      Typical causes: sample mix-up, incorrect dilution, pipetting error.
+    label: "Laboratory Error — Analyst / Procedure"
+    shap_signals:
+      - "assay_local_z"          # spike isolated to one batch
+      - "single_param_z"         # only one parameter affected
     checklist:
-      - Review analyst training records
-      - Check sample prep log and weighing records
-      - Verify calculation worksheets
-      - Interview analyst
-      - Request retest by second analyst
-    phase: "Phase I"
+      - Review analyst training records and SOP compliance
+      - Check sample preparation log and weighing records
+      - Verify calculation worksheets independently
+      - Interview analyst regarding session conditions
+      - Request retest by second qualified analyst
+    escalate_to_phase2_if:
+      - Retest result also OOS with no lab error found
+      - Multiple analysts affected in same session
 
   Lab_Error_Instrument:
-    label: "Laboratory Error - Instrument / Equipment"
-    description: >
-      Correlated deviation across multiple parameters on same instrument.
-      Typical causes: calibration failure, system suitability failure.
+    label: "Laboratory Error — Instrument / Equipment"
+    shap_signals:
+      - "cross_param_z_corr"     # multiple parameters co-deviate
+      - "calibration_days_ago"
+      - "instrument_id_flag"
     checklist:
-      - Pull instrument logbook
-      - Review last calibration certificate
-      - Check system suitability data
-    phase: "Phase I"
+      - Pull instrument logbook and maintenance records
+      - Review last calibration certificate and due date
+      - Check system suitability data for the run
+      - Verify column lot, age, and installation records
+      - Run certified reference standard on suspect instrument
+    escalate_to_phase2_if:
+      - Instrument confirmed in-calibration and SST passes
+      - Issue reproducible across multiple instruments
 
   Raw_Material:
-    label: "Raw Material / Starting Material Deviation"
-    description: >
-      Step-shift correlating with new material lot receipt.
+    label: "Raw Material / Starting Material Issue"
+    shap_signals:
+      - "step_shift_magnitude"   # persistent offset after lot change
+      - "lot_change_flag"
+      - "impurity_z"
     checklist:
-      - Cross-reference batch with raw material lot receipt date
+      - Cross-reference batch date with raw material lot receipt
       - Pull CoA from supplier for affected lot
-      - Request retained sample testing
-    phase: "Phase II"
+      - Request retained sample re-test (same lab, different analyst)
+      - Flag procurement and quality for supplier notification
+    escalate_to_phase2_if:
+      - CoA values within spec but deviation persists
+      - Multiple batches from same lot affected
 
-  Process_Deviation:
-    label: "Manufacturing Process Deviation"
-    description: >
-      Gradual drift in dissolution or compression parameters.
+  Process_Drift:
+    label: "Process / Equipment Drift"
+    shap_signals:
+      - "assay_slope"            # monotonic drift over time
+      - "dissolution_trend"
+      - "hardness_cv"
     checklist:
-      - Review batch records for process parameters
-      - Check equipment maintenance logs
-    phase: "Phase II"
+      - Review IPC data for the affected batches
+      - Check compression/coating process parameters in batch record
+      - Compare rolling mean trend against historical baseline
+    escalate_to_phase2_if:
+      - Drift confirmed beyond analytical variability
+      - Multiple parameters drifting in same direction
 
   Environmental_Equipment:
     label: "Environmental / Equipment Variability"
-    description: >
-      Variance inflation without mean shift in physical parameters.
+    shap_signals:
+      - "variance_ratio"         # spread inflates, mean stable
+      - "weight_cv"
+      - "hardness_std"
     checklist:
-      - Review environmental monitoring logs
-      - Inspect tooling for wear
-    phase: "Phase II"
+      - Review environmental monitoring logs (temp, humidity) for batch date
+      - Inspect tablet press punch/die tooling for wear
+      - Check HVAC maintenance and environmental excursion log
+    escalate_to_phase2_if:
+      - Variance confirmed beyond equipment specification
+      - Environmental excursion logged on batch date
+
+  Undetermined:
+    label: "Root Cause Undetermined — Phase II Investigation Recommended"
+    shap_signals: []
+    checklist:
+      - Document all ruled-out hypotheses with evidence
+      - Retain all samples pending extended investigation
+      - Escalate to multi-disciplinary investigation team
+    escalate_to_phase2_if:
+      - Always (default escalation)

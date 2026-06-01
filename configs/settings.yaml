@@ -1,23 +1,46 @@
+# ── LLM ──────────────────────────────────────────────────────────────────────
 llm:
-  model: "claude-sonnet-4-20250514"
-  max_tokens: 4096
+  model: "claude-haiku-4-5-20251001"   # swap to sonnet for higher quality
+  max_tokens: 2048
   temperature: 0.2
 
+# ── Embeddings & Retrieval ────────────────────────────────────────────────────
 retrieval:
   embedding_model: "all-MiniLM-L6-v2"
-  top_k: 6
+  top_k: 5
   chunk_size: 512
   chunk_overlap: 64
   collection_name: "pharma_kb"
 
-report:
-  page_size: "A4"
-  font: "Arial"
-  include_watermark: true
-  watermark_text: "AI-ASSISTED DRAFT — REQUIRES QC/QA REVIEW"
-  output_dir: "./reports"
+# ── ML (XGBoost anomaly detection) ───────────────────────────────────────────
+ml:
+  model_path: "./models/xgb_anomaly.json"
+  rolling_window: 10
+  oos_z_threshold: 3.0      # |z| > 3 → OOS
+  oot_z_threshold: 2.0      # 2 < |z| ≤ 3 → OOT
+  shap_top_n: 5             # top N features to surface in report
 
+# ── Data (Žagar 2022) ─────────────────────────────────────────────────────────
+data:
+  laboratory_csv: "./data/raw/Laboratory.csv"
+  process_csv:    "./data/raw/Process.csv"
+  norm_csv:       "./data/raw/Normalization.csv"
+  # Anomaly injection rates (fraction of batches)
+  injection:
+    point_spike_rate: 0.05
+    gradual_drift_rate: 0.003   # per-batch slope
+    variance_inflation_scale: 3.0
+    step_shift_delta_sigma: 1.8
+    random_seed: 42
+
+# ── Report ───────────────────────────────────────────────────────────────────
+report:
+  output_dir: "./reports"
+  font: "Calibri"
+  watermark_text: "AI-ASSISTED DRAFT — PHASE I ONLY — REQUIRES QA REVIEW"
+  include_shap_plot: true    # embed SHAP force plot PNG in docx
+
+# ── Audit ────────────────────────────────────────────────────────────────────
 audit:
   export_json: true
   include_retrieved_chunks: true
-  include_prompt_versions: true

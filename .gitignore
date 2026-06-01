@@ -1,15 +1,13 @@
 .env
 __pycache__/
 *.pyc
-*.pyo
 .pytest_cache/
 .ruff_cache/
 data/raw/
 data/processed/
 data/knowledge_base/
+models/*.json
 reports/
 *.egg-info/
-dist/
 .venv/
 venv/
-node_modules/
