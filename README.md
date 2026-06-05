@@ -156,22 +156,6 @@ python scripts/run_demo.py --static
 
 ---
 
-## Design Decisions
-
-### Why XGBoost predicts event_type, not root cause
-
-Root cause classification requires causally-grounded labels. Our labels come from injection mechanisms — so the model reliably learns *what pattern of features* leads to an anomaly. SHAP then exposes *which specific features* are anomalous, giving the LLM concrete evidence to reason from rather than accepting a black-box classification.
-
-### Why Phase I only
-
-The Žagar dataset contains process parameters but no manufacturing batch records, deviation logs, or supplier CoA data — the inputs needed for a credible Phase II investigation. Rather than generating hallucinated Phase II content, the system honestly outputs an escalation recommendation with rationale and explicitly defers Phase II to the site quality team.
-
-### Why no CAPA
-
-CAPA generation requires a confirmed, validated root cause — something this system explicitly avoids claiming. CAPA without a verified cause is a compliance risk. The escalation section scopes what Phase II should investigate; CAPA follows from Phase II findings, not from a Phase I draft.
-
----
-
 ## Scope Boundaries
 
 | In scope | Out of scope |
